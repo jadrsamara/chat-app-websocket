@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chat Room</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #4361ee;
+      --secondary: #3f37c9;
+      --light: #f8f9fa;
+      --dark: #212529;
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Poppins', sans-serif;
+      background-color: #f5f7fa;
+      color: var(--dark);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    
+    header {
+      background-color: var(--primary);
+      color: white;
+      padding: 0.75rem 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+    
+    .room-id {
+      font-family: monospace;
+      background-color: rgba(255, 255, 255, 0.2);
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      font-size: 1.1rem;
+      font-weight: 500;
+    }
+    
+    .user-badge {
+      background: rgba(255,255,255,0.2);
+      padding: 0.25rem 0.75rem;
+      border-radius: 20px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.9rem;
+      max-width: 40%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    
+    .chat-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      max-width: 800px;
+      margin: 0 auto;
+      width: 100%;
+      padding: 0.5rem;
+      height: calc(100vh - 60px);
+    }
+    
+    #messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0.5rem;
+      margin-bottom: 0.5rem;
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+      scroll-behavior: smooth;
+    }
+    
+    #messages::-webkit-scrollbar {
+      width: 6px;
+    }
+    
+    #messages::-webkit-scrollbar-track {
+      background: #f1f1f1;
+    }
+    
+    #messages::-webkit-scrollbar-thumb {
+      background: #888;
+      border-radius: 3px;
+    }
+    
+    .message {
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 0.75rem;
+      padding: 0.5rem 0.75rem;
+      border-radius: 8px;
+      background-color: #f8f9fa;
+      max-width: 90%;
+      animation: fadeIn 0.3s ease-out;
+      word-break: break-word;
+    }
+    
+    .message.self {
+      align-self: flex-end;
+      background-color: var(--primary);
+      color: white;
+    }
+    
+    .message.self .sender {
+      color: #e6e6e6;
+    }
+    
+    .sender {
+      font-weight: 600;
+      font-size: 0.75rem;
+      margin-bottom: 0.15rem;
+      color: #666;
+    }
+    
+    .time {
+      font-size: 0.65rem;
+      text-align: right;
+      margin-top: 0.15rem;
+      opacity: 0.7;
+    }
+    
+    .input-container {
+      display: flex;
+      gap: 0.5rem;
+      padding: 0.5rem;
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    }
+    
+    #messageInput {
+      flex: 1;
+      padding: 0.75rem;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      font-size: 1rem;
+      min-height: 50px;
+      max-height: 120px;
+      resize: none;
+    }
+    
+    #sendButton {
+      background-color: var(--primary);
+      color: white;
+      border: none;
+      padding: 0 1rem;
+      border-radius: 5px;
+      cursor: pointer;
+      min-width: 60px;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(5px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      justify-content: center;
+      align-items: center;
+      z-index: 100;
+    }
+    
+    .modal-content {
+      background: white;
+      padding: 1.5rem;
+      border-radius: 8px;
+      width: 90%;
+      max-width: 400px;
+    }
+    
+    .modal h2 {
+      margin-bottom: 1rem;
+      color: var(--primary);
+    }
+    
+    .modal input {
+      width: 100%;
+      padding: 0.75rem;
+      margin-bottom: 1rem;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    
+    .modal button {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 0.75rem;
+      border-radius: 4px;
+      cursor: pointer;
+      width: 100%;
+    }
+    
+    .notification {
+      position: fixed;
+      bottom: 1rem;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.7);
+      color: white;
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      animation: fadeIn 0.3s;
+      z-index: 99;
+    }
+    
+    @media (max-width: 600px) {
+      header {
+        padding: 0.5rem;
+      }
+      
+      .room-id {
+        font-size: 1rem;
+      }
+      
+      .chat-container {
+        padding: 0.25rem;
+      }
+      
+      .message {
+        max-width: 95%;
+        padding: 0.5rem;
+      }
+      
+      #messageInput {
+        padding: 0.5rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="modal" id="usernameModal">
+    <div class="modal-content">
+      <h2>Choose a Username</h2>
+      <p>This name will be visible to others in the chat</p>
+      <input type="text" id="usernameInput" placeholder="Enter your name" maxlength="20">
+      <button onclick="setUsername()">Continue</button>
+    </div>
+  </div>
+
+  <header>
+    <h1>Chat Room: <span class="room-id" id="roomIdDisplay"></span></h1>
+    <div class="user-badge" id="userBadge" onclick="showUsernameModal()">
+      <span id="usernameDisplay">User123</span>
+      <span>✏️</span>
+    </div>
+  </header>
+
+  <div class="chat-container">
+    <div id="messages"></div>
+    <div class="input-container">
+      <textarea id="messageInput" placeholder="Type your message..." autocomplete="off" rows="1"></textarea>
+      <button id="sendButton">Send</button>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    // Auto-resize textarea
+    const messageInput = document.getElementById('messageInput');
+    messageInput.addEventListener('input', function() {
+      this.style.height = 'auto';
+      this.style.height = (this.scrollHeight) + 'px';
+    });
+
+    // Get room ID from URL
+    const pathSegments = window.location.pathname.split('/');
+    const roomId = pathSegments[2];
+    document.getElementById('roomIdDisplay').textContent = roomId;
+    
+    // Get URL params
+    const urlParams = new URLSearchParams(window.location.search);
+    
+    // Get or generate username
+    function getCookie(name) {
+      const value = `; ${document.cookie}`;
+      const parts = value.split(`; ${name}=`);
+      if (parts.length === 2) return parts.pop().split(';').shift();
+    }
+    
+    const usernameCookie = getCookie('username');
+    const initialUsername = usernameCookie || `User${Math.floor(Math.random() * 10000)}`;
+    
+    // Connect to Socket.IO
+    const socket = io({
+      query: {
+        roomId: roomId.toLowerCase(),
+        username: initialUsername,
+        creatorToken: urlParams.get('creatorToken'),
+        verified: urlParams.has('verified')
+      }
+    });
+    
+    // Set initial username
+    document.getElementById('usernameDisplay').textContent = initialUsername;
+    
+    // Username handling
+    function showUsernameModal() {
+      const currentUsername = document.getElementById('usernameDisplay').textContent;
+      document.getElementById('usernameInput').value = currentUsername;
+      document.getElementById('usernameModal').style.display = 'flex';
+      document.getElementById('usernameInput').focus();
+    }
+    
+    function setUsername() {
+      const newUsername = document.getElementById('usernameInput').value.trim();
+      if (newUsername) {
+        socket.emit('set username', newUsername);
+        document.getElementById('usernameModal').style.display = 'none';
+        showNotification('Username updated!');
+      }
+    }
+    
+    // Messages handling
+    function addMessage(data, isSelf = false) {
+      const messages = document.getElementById('messages');
+      const messageElement = document.createElement('div');
+      messageElement.classList.add('message');
+      if (isSelf) messageElement.classList.add('self');
+      
+      messageElement.innerHTML = `
+        <div class="sender">${data.sender}</div>
+        <div class="text">${data.text}</div>
+        <div class="time">${data.time}</div>
+      `;
+      
+      messages.appendChild(messageElement);
+      messages.scrollTop = messages.scrollHeight;
+    }
+    
+    // Notification
+    function showNotification(text) {
+      const notification = document.createElement('div');
+      notification.className = 'notification';
+      notification.textContent = text;
+      document.body.appendChild(notification);
+      
+      setTimeout(() => {
+        notification.remove();
+      }, 3000);
+    }
+    
+    // Socket events
+    socket.on('username set', (newUsername) => {
+      document.getElementById('usernameDisplay').textContent = newUsername;
+      document.cookie = `username=${newUsername}; path=/; max-age=${60*60*24*30}`;
+    });
+    
+    socket.on('chat message', (data) => {
+      const currentUsername = document.getElementById('usernameDisplay').textContent;
+      addMessage(data, data.sender === currentUsername);
+    });
+    
+    socket.on('user joined', (username) => {
+      showNotification(`${username} joined`);
+    });
+    
+    socket.on('user left', (username) => {
+      showNotification(`${username} left`);
+    });
+    
+    // Send message
+    function sendMessage() {
+      const input = document.getElementById('messageInput');
+      const message = input.value.trim();
+      if (message) {
+        socket.emit('chat message', message);
+        input.value = '';
+        input.style.height = 'auto';
+      }
+    }
+    
+    // Event listeners
+    document.getElementById('sendButton').addEventListener('click', sendMessage);
+    document.getElementById('messageInput').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    });
+    
+    // Focus input on load
+    window.addEventListener('load', () => {
+      document.getElementById('messageInput').focus();
+    });
+  </script>
+</body>
+</html>
